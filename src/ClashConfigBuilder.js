@@ -44,6 +44,7 @@ export class ClashConfigBuilder extends BaseConfigBuilder {
                     cipher: proxy.security,
                     tls: proxy.tls?.enabled || false,
                     servername: proxy.tls?.server_name || '',
+                    'skip-cert-verify': proxy.tls?.insecure || false,
                     network: proxy.transport?.type || 'tcp',
                     'ws-opts': proxy.transport?.type === 'ws' ? {
                         path: proxy.transport.path,
@@ -90,6 +91,8 @@ export class ClashConfigBuilder extends BaseConfigBuilder {
                     up: proxy.up_mbps,
                     down: proxy.down_mbps,
                     'recv-window-conn': proxy.recv_window_conn,
+                    sni: proxy.tls?.server_name || '',
+                    'skip-cert-verify': proxy.tls?.insecure || true,
                 };
             case 'trojan':
                 return {

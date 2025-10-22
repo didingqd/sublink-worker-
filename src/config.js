@@ -1,11 +1,11 @@
 import { t } from './i18n';
 
-export const SITE_RULE_SET_BASE_URL = 'https://gh.sageer.me/https://raw.githubusercontent.com/lyc8503/sing-box-rules/refs/heads/rule-set-geosite/';
-export const IP_RULE_SET_BASE_URL = 'https://gh.sageer.me/https://raw.githubusercontent.com/lyc8503/sing-box-rules/refs/heads/rule-set-geoip/';
-export const CLASH_SITE_RULE_SET_BASE_URL = 'https://gh.sageer.me/https://github.com/MetaCubeX/meta-rules-dat/raw/refs/heads/meta/geo/geosite/';
-export const CLASH_IP_RULE_SET_BASE_URL = 'https://gh.sageer.me/https://github.com/MetaCubeX/meta-rules-dat/raw/refs/heads/meta/geo/geoip/';
-export const SURGE_SITE_RULE_SET_BASEURL = 'https://gh.sageer.me/https://github.com/NSZA156/surge-geox-rules/raw/refs/heads/release/geo/geosite/'
-export const SURGE_IP_RULE_SET_BASEURL = 'https://gh.sageer.me/https://github.com/NSZA156/surge-geox-rules/raw/refs/heads/release/geo/geoip/'
+export const SITE_RULE_SET_BASE_URL = 'https://gh-proxy.com/https://raw.githubusercontent.com/lyc8503/sing-box-rules/refs/heads/rule-set-geosite/';
+export const IP_RULE_SET_BASE_URL = 'https://gh-proxy.com/https://raw.githubusercontent.com/lyc8503/sing-box-rules/refs/heads/rule-set-geoip/';
+export const CLASH_SITE_RULE_SET_BASE_URL = 'https://gh-proxy.com/https://github.com/MetaCubeX/meta-rules-dat/raw/refs/heads/meta/geo/geosite/';
+export const CLASH_IP_RULE_SET_BASE_URL = 'https://gh-proxy.com/https://github.com/MetaCubeX/meta-rules-dat/raw/refs/heads/meta/geo/geoip/';
+export const SURGE_SITE_RULE_SET_BASEURL = 'https://gh-proxy.com/https://github.com/NSZA156/surge-geox-rules/raw/refs/heads/release/geo/geosite/'
+export const SURGE_IP_RULE_SET_BASEURL = 'https://gh-proxy.com/https://github.com/NSZA156/surge-geox-rules/raw/refs/heads/release/geo/geoip/'
 // Custom rules
 export const CUSTOM_RULES = [];
 // Unified rule structure
@@ -49,7 +49,7 @@ export const UNIFIED_RULES = [
 	{
 		name: 'Location:CN',
 		outbound: t('outboundNames.Location:CN'),
-		site_rules: ['geolocation-cn'],
+		site_rules: ['geolocation-cn','cn'],
 		ip_rules: ['cn']
 	},
 	{
@@ -386,42 +386,31 @@ export const SING_BOX_CONFIG = {
 	dns: {
 		servers: [
 			{
+				type: "tcp",
 				tag: "dns_proxy",
-				address: "tcp://1.1.1.1",
-				address_resolver: "dns_resolver",
-				strategy: "ipv4_only",
-				detour: "🚀 节点选择"
+				server: "1.1.1.1",
+				detour: "🚀 节点选择",
+				domain_resolver: "dns_resolver"
 			},
 			{
-				tag: "dns_direct", 
-				address: "https://dns.alidns.com/dns-query",
-				address_resolver: "dns_resolver",
-				strategy: "ipv4_only",
-				detour: "DIRECT"
+				type: "https",
+				tag: "dns_direct",
+				server: "dns.alidns.com",
+				domain_resolver: "dns_resolver"
 			},
 			{
+				type: "udp",
 				tag: "dns_resolver",
-				address: "223.5.5.5",
-				detour: "DIRECT"
+				server: "223.5.5.5"
 			},
 			{
-				tag: "dns_success",
-				address: "rcode://success"
-			},
-			{
-				tag: "dns_refused",
-				address: "rcode://refused"
-			},
-			{
+				type: "fakeip",
 				tag: "dns_fakeip",
-				address: "fakeip"
+				inet4_range: "198.18.0.0/15",
+				inet6_range: "fc00::/18"
 			}
 		],
 		rules: [
-			{
-				outbound: "any",
-				server: "dns_resolver"
-			},
 			{
 				rule_set: "geolocation-!cn",
 				query_type: [
@@ -432,9 +421,7 @@ export const SING_BOX_CONFIG = {
 			},
 			{
 				rule_set: "geolocation-!cn",
-				query_type: [
-					"CNAME"
-				],
+				query_type: "CNAME",
 				server: "dns_proxy"
 			},
 			{
@@ -444,17 +431,12 @@ export const SING_BOX_CONFIG = {
 					"CNAME"
 				],
 				invert: true,
-				server: "dns_refused",
-				disable_cache: true
+				action: "predefined",
+				rcode: "REFUSED"
 			}
 		],
 		final: "dns_direct",
-		independent_cache: true,
-		fakeip: {
-			enabled: true,
-			inet4_range: "198.18.0.0/15",
-			inet6_range: "fc00::/18"
-		}
+		independent_cache: true
 	},
 	ntp: {
 		enabled: true,
@@ -464,14 +446,14 @@ export const SING_BOX_CONFIG = {
 	},
 	inbounds: [
 		{ type: 'mixed', tag: 'mixed-in', listen: '0.0.0.0', listen_port: 2080 },
-		{ type: 'tun', tag: 'tun-in', address: '172.19.0.1/30', auto_route: true, strict_route: true, stack: 'mixed', sniff: true },
-		{ "type": "socks", "listen": "127.0.0.1", "listen_port": 2081, "tag": "REJECT-in" },
+		{ type: 'tun', tag: 'tun-in', address: '172.19.0.1/30', auto_route: true, strict_route: true, stack: 'mixed', sniff: true }
 	],
 	outbounds: [
-		{ "type": "socks", "server": "127.0.0.1", "server_port": 2081, "tag": "REJECT" },
-		{ "type": "direct", "tag": "DIRECT" },
+		{ type: 'block', tag: 'REJECT' },
+		{ type: "direct", tag: 'DIRECT' }
 	],
 	route : {
+		default_domain_resolver: "dns_resolver",
 		"rule_set": [
             {
                 "tag": "geosite-geolocation-!cn",
@@ -480,16 +462,7 @@ export const SING_BOX_CONFIG = {
                 "path": "geosite-geolocation-!cn.srs"
             }
 		],
-		rules: [      
-			// {
-			// 	"inbound": ["REJECT-in"],
-			// 	"action": "reject"
-			// },
-			{
-				"inbound": ["DIRECT-in"],
-				"action": "direct"
-			}
-		]
+		rules: []
 	},
 	experimental: {
 		cache_file: {
